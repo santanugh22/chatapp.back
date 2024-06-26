@@ -1,4 +1,5 @@
 import express from "express";
+import jwt from "jsonwebtoken";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import pool from "./config/dbConfig.js";
@@ -25,17 +26,18 @@ const io = new Server(httpServer, {
   },
 });
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
+  const token = socket.handshake.headers.token;
   if (token) {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
         return next(new Error("Authentication error"));
       }
-      socket.decoded = decoded;
+      socket.user = decoded.user_id;
+
       next();
     });
   } else {
-    next(new Error("Authentication error"));
+    next(new Error("Authentication error : No token"));
   }
 });
 
